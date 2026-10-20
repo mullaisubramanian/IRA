@@ -1,0 +1,20 @@
+/* modal + toast */
+.modal-bg{position:fixed;inset:0;background:rgba(6,57,60,.55);backdrop-filter:blur(4px);display:grid;place-items:center;z-index:60;padding:16px;animation:fade .2s both;opacity:0}
+.modal{background:var(--paper);border-radius:24px;max-width:600px;width:100%;max-height:90vh;overflow:auto;padding:28px;box-shadow:0 30px 80px rgba(0,0,0,.35);animation:rise .3s ease-out}
+.modal h3{margin:0 0 4px;font-size:22px}
+.modal .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+.detail{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;font-size:13.5px;margin-top:16px}
+.detail span{display:block;font-size:12px;color:var(--ink-3);font-weight:600}
+.toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:13px 20px 13px 16px;border-radius:14px;font-weight:600;z-index:80;box-shadow:0 14px 36px rgba(6,57,60,.4);display:flex;align-items:center;gap:10px;animation:tin .3s cubic-bezier(.3,1.4,.5,1);max-width:calc(100vw - 32px)}
+.toast::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--marigold);flex:none}
+.toast.err::before{background:var(--coral)}
+@keyframes tin{from{opacity:0;transform:translate(-50%,16px)}}
+.login{min-height:calc(100vh - 64px);display:grid;grid-template-columns:1fr 1fr}
+.login .side{background:var(--navy);color:#fff;padding:60px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden}
+.login .side h2{font-size:40px;line-height:1.08;margin:0 0 14px;font-weight:800}
+.login .side p{color:rgba(255,255,255,.72);max-width:420px;margin:0}
+.login .side::after{content:"";position:absolute;right:-120px;bottom:-120px;width:340px;height:340px;border-radius:50%;border:60px solid var(--jade);opacity:.18}
+.login .form{display:flex;align-items:center;justify-content:center;padding:40px 24px}
+.login .form>div{width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+.login .form h3{margin:0;font-size:26px}
+.radar text{font-size:10px;fill:var(--ink-2);font-family:var(--body);font-weight:600}

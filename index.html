@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="IRA (Intelligent Recruitment Assessment) matches faculty members with colleges across Tamil Nadu.">
+<title>IRA · Intelligent Recruitment Assessment</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700;12..96,800&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="topbar" id="topbar">
+  <button class="brand" data-act="home" aria-label="IRA home">
+    <span class="brand-mark"><svg viewBox="0 0 20 20"><circle cx="5" cy="14" r="3" fill="#F2A93B"/><circle cx="15" cy="6" r="3" fill="#1CC3BD"/><path d="M5 14 Q6 5 15 6" stroke="#0C8F8B" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>
+    <span class="brand-name">IRA<small>Intelligent Recruitment Assessment</small></span>
+  </button>
+  <div class="grow"></div>
+  <nav class="topnav">
+    <button data-act="home" id="nav-home">Home</button>
+    <button data-act="goFaculty" id="nav-fac">For faculty</button>
+    <button data-act="goInst" id="nav-inst">For institutions</button>
+  </nav>
+  <div class="acct" id="acct" style="display:none"></div>
+</header>
+<main id="app"></main>
+<div id="modal"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+/* ---------------- top bar ---------------- */
+.topbar{height:64px;display:flex;align-items:center;gap:16px;padding:0 28px;position:sticky;top:0;z-index:40;background:rgba(255,255,255,.86);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.topbar.dark{background:transparent;border-bottom-color:transparent;position:absolute;left:0;right:0;color:#fff}
+.brand{display:flex;align-items:center;gap:10px;cursor:pointer;background:none;border:0;padding:0}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:var(--navy);position:relative;display:grid;place-items:center;overflow:hidden}
+.topbar.dark .brand-mark{background:#fff}
+.brand-mark svg{width:20px;height:20px}
+.brand-name{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:.02em;line-height:1.05;text-align:left}
+.brand-name small{display:block;font-family:var(--body);font-weight:600;font-size:10.5px;letter-spacing:.02em;opacity:.72}
+.ira-word{display:flex;flex-wrap:wrap;gap:4px 16px;margin:0 0 18px;font-family:var(--display);font-size:24px;font-weight:600;color:rgba(255,255,255,.88);letter-spacing:-.01em}
+.ira-word b{color:var(--indigo-2);font-weight:800;font-size:1.3em}
+.topbar .grow{flex:1}
+.topnav{display:flex;gap:2px}
+.topnav button{white-space:nowrap;border:0;background:transparent;padding:8px 14px;border-radius:999px;font-weight:600;color:var(--ink-2)}
+.topbar.dark .topnav button{color:rgba(255,255,255,.75)}
+.topnav button:hover{color:var(--ink)}
+.topbar.dark .topnav button:hover{color:#fff}
+.topnav button.on{background:var(--indigo-soft);color:var(--indigo-ink)}
+.topbar.dark .topnav button.on{background:rgba(255,255,255,.14);color:#fff}
+.topbar{background:var(--navy);color:#fff;border-bottom-color:rgba(255,255,255,.08)}
+.topbar .brand-mark{background:#fff}
+.topnav button{color:rgba(255,255,255,.72)}
+.topnav button:hover{color:#fff}
+.topnav button.on{background:rgba(255,255,255,.14);color:#fff}
+.acct{display:flex;align-items:center;gap:10px;margin-left:10px;padding-left:14px;border-left:1px solid rgba(255,255,255,.18)}
+.acct .av{width:32px;height:32px;border-radius:10px;background:var(--marigold);color:var(--navy);display:grid;place-items:center;font-weight:800;font-size:12px;font-family:var(--display)}
+.acct .who{line-height:1.2;font-size:13px;font-weight:700;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct .who small{display:block;font-weight:600;color:rgba(255,255,255,.6);font-size:11px}
+.acct .out{border:1px solid rgba(255,255,255,.28);background:transparent;color:#fff;border-radius:10px;padding:6px 11px;font-size:12.5px;font-weight:700}
+.acct .out:hover{background:rgba(255,255,255,.1)}
+.authtabs{display:flex;background:var(--mist);border-radius:12px;padding:4px;gap:4px}
+.authtabs button{flex:1;border:0;background:transparent;padding:9px;border-radius:9px;font-weight:700;color:var(--ink-2)}
+.authtabs button.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 3px rgba(6,57,60,.18)}
+.err{color:var(--coral);font-size:13px;font-weight:600;min-height:0}
+.err:empty{display:none}
+.blocked{max-width:580px;margin:70px auto;padding:0 20px}
+.in[readonly]{background:var(--mist);color:var(--ink-2)}

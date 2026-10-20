@@ -1,0 +1,19 @@
+{
+  "name": "ira-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "IRA (Intelligent Recruitment Assessment): faculty and institution recruitment platform",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "seed": "node scripts/seed.js"
+  },
+  "devDependencies": {
+    "vite": "^5.4.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.118.0"
+  }
+}
