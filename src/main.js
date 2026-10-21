@@ -10,8 +10,8 @@ import './styles/responsive.css';
 import './app/events.js';
 import './views/auth.js';
 import { render } from './app/render.js';
-import { D, S, attach, load } from './core/state.js';
-import { R } from './views/institution.js';
+import { D, S, attach, blankI, load } from './core/state.js';
+import { R, newReq } from './views/institution.js';
 import { allMatches } from './logic/matching.js';
 import { districtsOf, STATE_DISTRICTS } from './data/catalog.js';
 import { supabase } from './core/supabase.js';
@@ -63,6 +63,32 @@ async function syncUserSession(u) {
       }
     } catch (err) {
       console.warn('[Supabase profile sync exception]', err);
+    }
+  } else if (S.session.role === 'institution') {
+    try {
+      const { data: inst, error } = await supabase
+        .from('institutions')
+        .select('*')
+        .eq('id', u.id)
+        .single();
+      if (!error && inst) {
+        const existing = S.instData[u.email] || {};
+        S.instData[u.email] = {
+          ...blankI(),
+          ...existing,
+          name: inst.institution_name || S.session.name || existing.name || '',
+          email: u.email,
+          type: inst.type || existing.type || 'Engineering & Technology',
+          dist: inst.city || existing.dist || 'Coimbatore',
+          contact: inst.contact_person || existing.contact || '',
+          phone: inst.phone || existing.phone || '',
+          reqs: existing.reqs && existing.reqs.length > 0 ? existing.reqs : [newReq()],
+          cur: existing.cur !== undefined && existing.cur >= 0 ? existing.cur : 0
+        };
+        attach();
+      }
+    } catch (err) {
+      console.warn('[Supabase institution sync exception]', err);
     }
   }
   render();

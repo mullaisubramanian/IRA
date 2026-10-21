@@ -129,14 +129,21 @@ BEGIN
         VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'phone', ''))
         ON CONFLICT (id) DO NOTHING;
     ELSIF COALESCE(NEW.raw_user_meta_data->>'role', 'faculty') = 'institution' THEN
-        INSERT INTO public.institutions (id, institution_name, contact_person, phone)
+        INSERT INTO public.institutions (id, institution_name, type, city, contact_person, phone)
         VALUES (
             NEW.id, 
             COALESCE(NEW.raw_user_meta_data->>'institution_name', COALESCE(NEW.raw_user_meta_data->>'full_name', 'College')),
-            COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+            COALESCE(NEW.raw_user_meta_data->>'type', 'Engineering & Technology'),
+            COALESCE(NEW.raw_user_meta_data->>'city', 'Coimbatore'),
+            COALESCE(NEW.raw_user_meta_data->>'contact_person', COALESCE(NEW.raw_user_meta_data->>'full_name', '')),
             COALESCE(NEW.raw_user_meta_data->>'phone', '')
         )
-        ON CONFLICT (id) DO NOTHING;
+        ON CONFLICT (id) DO UPDATE
+        SET institution_name = EXCLUDED.institution_name,
+            type = COALESCE(EXCLUDED.type, public.institutions.type),
+            city = COALESCE(EXCLUDED.city, public.institutions.city),
+            contact_person = COALESCE(EXCLUDED.contact_person, public.institutions.contact_person),
+            phone = COALESCE(EXCLUDED.phone, public.institutions.phone);
     END IF;
 
     RETURN NEW;

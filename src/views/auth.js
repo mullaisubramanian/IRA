@@ -4,7 +4,7 @@ import { $, D, S, attach, blankF, blankI, esc, save, toast } from '../core/state
 import { ICON } from '../core/ui.js';
 import { INST_TYPES, districtsOf } from '../data/catalog.js';
 import { newReq } from './institution.js';
-import { signUpUser, signInUser } from '../core/supabase.js';
+import { signUpUser, signInUser, upsertInstitutionProfile } from '../core/supabase.js';
 
 /* ======================= ACCOUNTS ================================== */
 export const af=(l,id,type,ph,auto,val)=>`<div class="field"><label for="${id}">${l}<span class="req">*</span></label><input class="in" id="${id}" type="${type}" placeholder="${esc(ph)}" value="${esc(val||'')}" autocomplete="${auto||'off'}"></div>`;
@@ -73,57 +73,125 @@ document.addEventListener('submit', async e => {
       const { data, error } = await signInUser(email, pass);
       if (error) {
         console.error('[Supabase signIn error]', error);
-        return err(error.message || 'Email or password is incorrect.');
+        const msg = error.message || '';
+        if (msg.toLowerCase().includes('invalid login credentials')) {
+          return err('Incorrect email or password. Please verify your credentials.');
+        } else if (msg.toLowerCase().includes('email not confirmed')) {
+          return err('Please check your email to confirm your account, or disable "Confirm email" in Supabase Auth settings to log in immediately.');
+        }
+        return err(msg || 'Email or password is incorrect.');
       }
       const user = data.user;
       const userRole = user?.user_metadata?.role || role;
       if (userRole !== role) {
         return err(`This account is registered as ${userRole === 'faculty' ? 'a faculty' : 'an institution'} account. Please use the ${userRole} login.`);
       }
+      const displayName = userRole === 'institution'
+        ? (user.user_metadata?.institution_name || user.user_metadata?.full_name || email.split('@')[0])
+        : (user.user_metadata?.full_name || email.split('@')[0]);
+
       S.session = {
         id: user.id,
         email: user.email,
         role: userRole,
-        name: user.user_metadata?.full_name || email.split('@')[0]
+        name: displayName
       };
+
+      // If institution, retrieve and hydrate from public.institutions
+      if (userRole === 'institution') {
+        try {
+          const { data: instData } = await supabase
+            .from('institutions')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          if (instData) {
+            S.instData[email] = {
+              ...blankI(),
+              ...(S.instData[email] || {}),
+              name: instData.institution_name || displayName,
+              email: email,
+              type: instData.type || 'Engineering & Technology',
+              dist: instData.city || 'Coimbatore',
+              contact: instData.contact_person || '',
+              phone: instData.phone || ''
+            };
+          }
+        } catch (e) {
+          console.warn('[Supabase inst login hydrate exception]', e);
+        }
+      }
+
       attach();
       save();
       toast(`Welcome back, ${S.session.name}`);
       go(() => S.view = role === 'faculty' ? 'faculty' : 'inst');
     } else {
       // Sign up mode
-      const name = v(role === 'faculty' ? 'aName' : 'aInst');
-      if (!name) return err(role === 'faculty' ? 'Enter your full name.' : 'Enter the institution name.');
+      const isFac = role === 'faculty';
+      const facultyName = v('aName');
+      const instName = v('aInst');
+      const instType = v('aType');
+      const instDist = v('aDist');
+      const contactPerson = v('aName');
+      const contactDesig = v('aDesig');
+      const mobile = v('aMobile');
+
+      // Validation
+      if (isFac) {
+        if (!facultyName) return err('Enter your full name.');
+        if (mobile.replace(/\D/g, '').length < 10) return err('Enter a valid 10-digit mobile number.');
+      } else {
+        if (!instName) return err('Enter the institution name.');
+        if (!contactPerson) return err('Enter the contact person name.');
+        if (!instType) return err('Select the institution type.');
+        if (!instDist) return err('Select the district.');
+      }
+
       const pass2 = f.querySelector('#aPass2')?.value;
       if (pass !== pass2) return err('The two passwords do not match.');
-      if (role === 'faculty' && v('aMobile').replace(/\D/g, '').length < 10) return err('Enter a valid 10-digit mobile number.');
-      if (role === 'institution' && !v('aName')) return err('Enter the contact person name.');
 
       const { data, error } = await signUpUser({
         email,
         password: pass,
         role,
-        fullName: name,
-        phone: role === 'faculty' ? v('aMobile') : '',
-        institutionName: role === 'institution' ? name : ''
+        fullName: isFac ? facultyName : contactPerson,
+        phone: isFac ? mobile : '',
+        institutionName: isFac ? '' : instName,
+        type: isFac ? '' : instType,
+        city: isFac ? '' : instDist,
+        contactPerson: isFac ? '' : contactPerson,
+        contactDesig: isFac ? '' : contactDesig
       });
 
       if (error) {
         console.error('[Supabase signUp error]', error);
-        return err(error.message);
+        const msg = error.message || '';
+        const code = error.code || '';
+        if (code === 'user_already_exists' || msg.toLowerCase().includes('already registered')) {
+          return err('An account with this email address already exists. Please switch to the "Log in" tab above.');
+        } else if (code === 'over_email_send_rate_limit' || error.status === 429 || msg.toLowerCase().includes('rate limit')) {
+          return err('Email rate limit reached on Supabase. Please disable "Confirm email" in Supabase Dashboard (Authentication → Providers → Email) or wait for rate limit to reset.');
+        } else if (code === 'weak_password' || msg.toLowerCase().includes('password')) {
+          return err('Password is too weak. Please use at least 6 characters.');
+        } else {
+          return err(msg || 'Registration failed. Please check your connection and try again.');
+        }
       }
 
       const user = data?.user;
       const session = data?.session;
 
       if (session && user) {
+        const accountDisplayName = isFac ? facultyName : instName;
         S.session = {
           id: user.id,
           email: user.email,
           role,
-          name
+          name: accountDisplayName
         };
-        if (role === 'faculty') {
+
+        if (isFac) {
           const existing = S.profiles[email] || S.f || blankF();
           const p = {
             ...existing,
@@ -131,28 +199,42 @@ document.addEventListener('submit', async e => {
               ...D0(),
               ...D,
               ...existing.d,
-              name: name || existing.d?.name || D.name,
+              name: facultyName || existing.d?.name || D.name,
               email: email || existing.d?.email || D.email,
-              mobile: v('aMobile') || existing.d?.mobile || D.mobile
+              mobile: mobile || existing.d?.mobile || D.mobile
             }
           };
           S.profiles[email] = p;
         } else {
+          // Explicitly upsert institution record into public.profiles and public.institutions!
+          try {
+            await upsertInstitutionProfile(user.id, {
+              institutionName: instName,
+              type: instType,
+              city: instDist,
+              contactPerson: contactPerson,
+              phone: ''
+            });
+          } catch (e) {
+            console.warn('[Institution profile upsert exception]', e);
+          }
+
           S.instData[email] = {
             ...blankI(),
-            name,
-            email,
-            type: v('aType'),
-            dist: v('aDist'),
-            contact: v('aName'),
-            contactDesig: v('aDesig'),
+            name: instName,
+            email: email,
+            type: instType,
+            dist: instDist,
+            contact: contactPerson,
+            contactDesig: contactDesig,
             reqs: [newReq()],
             cur: 0
           };
         }
+
         attach();
         save();
-        toast('Account created and signed in successfully!');
+        toast(`${isFac ? 'Faculty' : 'Institution'} account created and signed in successfully!`);
         go(() => S.view = role === 'faculty' ? 'faculty' : 'inst');
       } else {
         // Email confirmation is required by Supabase auth configuration

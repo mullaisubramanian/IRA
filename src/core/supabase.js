@@ -1,19 +1,32 @@
 import { createClient } from '@supabase/supabase-js';
 
 export function sanitizeSupabaseUrl(rawUrl) {
-  if (!rawUrl) return 'https://vlgviaijtzrxufbzvzps.supabase.co';
-  let url = String(rawUrl).trim();
-  // Automatically correct dashboard URLs like https://supabase.com/dashboard/project/vlgviaijtzrxufbzvzps/settings/api-keys
+  if (!rawUrl || rawUrl === 'undefined' || rawUrl === 'null') {
+    return 'https://vlgviaijtzrxufbzvzps.supabase.co';
+  }
+  let url = String(rawUrl).trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
   const dashMatch = url.match(/supabase\.com\/dashboard\/project\/([a-zA-Z0-9_-]+)/);
   if (dashMatch) {
     return `https://${dashMatch[1]}.supabase.co`;
   }
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return `https://${url}`;
+  }
   return url;
 }
 
+export function sanitizeSupabaseKey(rawKey) {
+  if (!rawKey || rawKey === 'undefined' || rawKey === 'null') {
+    return 'sb_publishable_dcta-ibySlmWcszgWE_b1w_NFX7uLUU';
+  }
+  return String(rawKey).trim().replace(/^["']|["']$/g, '');
+}
+
 const rawSupabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) || 'https://vlgviaijtzrxufbzvzps.supabase.co';
+const rawSupabaseKey = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_dcta-ibySlmWcszgWE_b1w_NFX7uLUU';
+
 export const SUPABASE_URL = sanitizeSupabaseUrl(rawSupabaseUrl);
-export const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_dcta-ibySlmWcszgWE_b1w_NFX7uLUU';
+export const SUPABASE_ANON_KEY = sanitizeSupabaseKey(rawSupabaseKey);
 
 // Runtime masked logging as requested
 console.log(
@@ -40,9 +53,9 @@ export async function testConnection() {
 }
 
 /**
- * Sign up user with metadata passed to auth trigger (which populates public.profiles)
+ * Sign up user with metadata passed to auth trigger (which populates public.profiles & public.institutions)
  */
-export async function signUpUser({ email, password, role = 'faculty', fullName = '', phone = '', institutionName = '' }) {
+export async function signUpUser({ email, password, role = 'faculty', fullName = '', phone = '', institutionName = '', type = '', city = '', contactPerson = '', contactDesig = '' }) {
   const res = await supabase.auth.signUp({
     email,
     password,
@@ -51,7 +64,11 @@ export async function signUpUser({ email, password, role = 'faculty', fullName =
         role,
         full_name: fullName,
         phone,
-        institution_name: institutionName
+        institution_name: institutionName,
+        type,
+        city,
+        contact_person: contactPerson,
+        contact_designation: contactDesig
       }
     }
   });
@@ -59,6 +76,46 @@ export async function signUpUser({ email, password, role = 'faculty', fullName =
     console.error('[IRA Supabase] signUpUser error:', res.error);
   } else {
     console.log('[IRA Supabase] signUpUser success for:', email, 'userId:', res.data?.user?.id);
+  }
+  return res;
+}
+
+/**
+ * Explicitly upsert institution profile into public.profiles and public.institutions
+ */
+export async function upsertInstitutionProfile(userId, { institutionName, type = 'Engineering & Technology', city = 'Coimbatore', state = 'Tamil Nadu', website = '', contactPerson = '', phone = '', logoUrl = '' }) {
+  if (!userId) {
+    const err = new Error('User ID required to update institution profile');
+    console.error('[IRA Supabase] upsertInstitutionProfile error:', err);
+    return { data: null, error: err };
+  }
+
+  // 1. Update public.profiles
+  const { error: pErr } = await supabase.from('profiles').upsert({
+    id: userId,
+    full_name: contactPerson || institutionName,
+    role: 'institution'
+  }, { onConflict: 'id' });
+  if (pErr) console.warn('[IRA Supabase] profiles upsert notice:', pErr.message);
+
+  // 2. Upsert public.institutions
+  const instPayload = {
+    id: userId,
+    institution_name: institutionName,
+    type: type || 'Engineering & Technology',
+    city: city || 'Coimbatore',
+    state: state || 'Tamil Nadu',
+    website: website || '',
+    contact_person: contactPerson || '',
+    phone: phone || '',
+    logo_url: logoUrl || ''
+  };
+
+  const res = await supabase.from('institutions').upsert(instPayload, { onConflict: 'id' }).select();
+  if (res.error) {
+    console.error('[IRA Supabase] institutions upsert error:', res.error);
+  } else {
+    console.log('[IRA Supabase] institutions upsert success for:', userId);
   }
   return res;
 }
