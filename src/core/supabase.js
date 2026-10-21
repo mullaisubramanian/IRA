@@ -1,6 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) || 'https://vlgviaijtzrxufbzvzps.supabase.co';
+export function sanitizeSupabaseUrl(rawUrl) {
+  if (!rawUrl) return 'https://vlgviaijtzrxufbzvzps.supabase.co';
+  let url = String(rawUrl).trim();
+  // Automatically correct dashboard URLs like https://supabase.com/dashboard/project/vlgviaijtzrxufbzvzps/settings/api-keys
+  const dashMatch = url.match(/supabase\.com\/dashboard\/project\/([a-zA-Z0-9_-]+)/);
+  if (dashMatch) {
+    return `https://${dashMatch[1]}.supabase.co`;
+  }
+  return url;
+}
+
+const rawSupabaseUrl = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) || 'https://vlgviaijtzrxufbzvzps.supabase.co';
+export const SUPABASE_URL = sanitizeSupabaseUrl(rawSupabaseUrl);
 export const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_dcta-ibySlmWcszgWE_b1w_NFX7uLUU';
 
 // Runtime masked logging as requested

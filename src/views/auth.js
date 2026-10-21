@@ -165,7 +165,12 @@ document.addEventListener('submit', async e => {
     }
   } catch (ex) {
     console.error('[Supabase Auth Exception]', ex);
-    err(ex.message || 'An unexpected error occurred during authentication.');
+    const m = ex.message || '';
+    if (m.toLowerCase().includes('failed to fetch') || m.toLowerCase().includes('networkerror')) {
+      err('Connection error: Unable to reach Supabase API. Check your internet connection and verify VITE_SUPABASE_URL in Cloudflare settings is https://vlgviaijtzrxufbzvzps.supabase.co.');
+    } else {
+      err(m || 'An unexpected error occurred during authentication.');
+    }
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
