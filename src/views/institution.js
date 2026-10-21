@@ -4,6 +4,8 @@ import { ICON, brandMark } from '../core/ui.js';
 import { TRAITS } from '../data/catalog.js';
 import { QUICK_DEPTS, ROLE_CHIPS, instDepts } from '../logic/chatParser.js';
 import { renderInterviews, renderResults } from '../logic/matching.js';
+import { fetchInstitutionVacancies } from '../core/supabase.js';
+import { render } from '../app/render.js';
 
 /* ======================= 6) INSTITUTION LOGIN ======================== */
 export const REQ_FLOW = [
@@ -24,7 +26,59 @@ export const REQ_FLOW = [
 export const newReq = () => ({id:Date.now(),msgs:[],role:'',dept:'',subjects:null,count:'',qual:'',exp:null,salary:null,gender:'',age:'',joining:'',accom:'',transport:'',traits:null,asking:null,confirmed:false,notify:true});
 export const R = () => S.i.reqs[S.i.cur];
 
+let isFetchingInstVacancies = false;
+let lastSyncedInstId = null;
+
+export function syncInstitutionVacancies() {
+  const uid = S.session?.id;
+  if (!uid || isFetchingInstVacancies || lastSyncedInstId === uid) return;
+  isFetchingInstVacancies = true;
+  fetchInstitutionVacancies(uid).then(({ data, error }) => {
+    isFetchingInstVacancies = false;
+    lastSyncedInstId = uid;
+    if (error) {
+      console.error('[Supabase Institution Vacancies Load Error]', error);
+      return;
+    }
+    if (data && data.length) {
+      console.log('[Supabase Institution Vacancies Loaded]', data.length, 'vacancies');
+      data.forEach(v => {
+        const already = S.i.reqs.some(r => r.supabaseId === v.id || (r.role === v.title && r.dept === v.department));
+        if (!already) {
+          S.i.reqs.push({
+            id: Date.now() + Math.random(),
+            supabaseId: v.id,
+            msgs: [{ from: 'bot', text: v.description || `Live vacancy for ${v.title} in ${v.department}.`, fresh: false }],
+            role: v.title,
+            dept: v.department,
+            subjects: null,
+            count: '1+',
+            qual: v.qualification_required || 'PG',
+            exp: null,
+            salary: null,
+            gender: 'Any',
+            age: '',
+            joining: 'Within 30 days',
+            accom: 'Yes – Free',
+            transport: 'Yes – Free',
+            traits: null,
+            asking: null,
+            confirmed: true,
+            notify: true
+          });
+        }
+      });
+      if (S.i.cur < 0 && S.i.reqs.length) S.i.cur = 0;
+      render();
+    }
+  }).catch(err => {
+    isFetchingInstVacancies = false;
+    console.error('[Supabase Inst Vacancies Exception]', err);
+  });
+}
+
 export function renderInst(){
+  syncInstitutionVacancies();
   const I=S.i;
   const r=R();
   return `<div class="ishell">

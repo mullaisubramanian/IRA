@@ -1,17 +1,22 @@
 -- ============================================================================
 -- supabase/seed.sql
--- IRA (Intelligent Recruitment Assessment) Complete Mock/Demo Data Seed
--- Inserts all Institutions, Vacancies, Faculty Profiles, Applications & Notifications
--- Wrapped in a single transaction with hard-coded UUIDs for safe, idempotent re-runs.
+-- IRA (Intelligent Recruitment Assessment) Complete Database Seed
+-- All sample institutions, vacancies, faculty profiles, applications & notifications
+-- Ready to paste into Supabase SQL Editor and click RUN.
+-- Safe, idempotent execution wrapped in BEGIN ... COMMIT.
 -- ============================================================================
 
 BEGIN;
 
--- Ensure pgcrypto extension is available for crypt() password hashing
+-- Enable pgcrypto extension for crypt() password hashing
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Set search path
+SET search_path = public, auth, pg_catalog;
 
 -- ----------------------------------------------------------------------------
 -- 1. AUTH USERS (8 Institutions + 18 Faculty = 26 Auth Users)
+-- Default password for all demo accounts: Test@1234
 -- ----------------------------------------------------------------------------
 
 INSERT INTO auth.users (
@@ -21,14 +26,14 @@ INSERT INTO auth.users (
 )
 VALUES
     -- 8 Institutions
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'principal@psgtech.edu', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"PSG College of Technology"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'careers@kct.ac.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Kumaraguru College of Technology"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000003', '10000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'recruitment@loyolacollege.edu', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Loyola College"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'hr@abirami.org', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Sree Abirami College of Physiotherapy"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'nursing@kmch.ac.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"KMCH College of Nursing"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000006', 'authenticated', 'authenticated', 'director@psgim.ac.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"PSG Institute of Management"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'deanmmc@tn.gov.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Madras Medical College - Allied Health Sciences"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000008', 'authenticated', 'authenticated', 'principal@tce.edu', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Thiagarajar College of Engineering"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'principal@psgtech.edu', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"PSG College of Technology","institution_name":"PSG College of Technology"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000002', 'authenticated', 'authenticated', 'careers@kct.ac.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Kumaraguru College of Technology","institution_name":"Kumaraguru College of Technology"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000003', 'authenticated', 'authenticated', 'recruitment@loyolacollege.edu', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Loyola College","institution_name":"Loyola College"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000004', 'authenticated', 'authenticated', 'hr@abirami.org', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Sree Abirami College of Physiotherapy","institution_name":"Sree Abirami College of Physiotherapy"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000005', 'authenticated', 'authenticated', 'nursing@kmch.ac.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"KMCH College of Nursing","institution_name":"KMCH College of Nursing"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000006', 'authenticated', 'authenticated', 'director@psgim.ac.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"PSG Institute of Management","institution_name":"PSG Institute of Management"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'deanmmc@tn.gov.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Madras Medical College - Allied Health Sciences","institution_name":"Madras Medical College - Allied Health Sciences"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000000', '10000000-0000-0000-0000-000000000008', 'authenticated', 'authenticated', 'principal@tce.edu', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"institution","full_name":"Thiagarajar College of Engineering","institution_name":"Thiagarajar College of Engineering"}', now(), now()),
 
     -- 18 Faculty Profiles
     ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000001', 'authenticated', 'authenticated', 'priya.raman@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Priya Raman"}', now(), now()),
@@ -40,15 +45,15 @@ VALUES
     ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000007', 'authenticated', 'authenticated', 'ramesh.chandran@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Ramesh Chandran"}', now(), now()),
     ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000008', 'authenticated', 'authenticated', 'anitha.joseph@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Anitha Joseph"}', now(), now()),
     ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000009', 'authenticated', 'authenticated', 'vignesh.prabhu@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Vignesh Prabhu"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000010', 'authenticated', 'authenticated', 'fathima.begum@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Fathima Begum"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000011', 'authenticated', 'authenticated', 'kavitha.sundaram@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Kavitha Sundaram"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000012', 'authenticated', 'authenticated', 'saravanan.murugesan@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Saravanan Murugesan"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000013', 'authenticated', 'authenticated', 'revathi.krishnan@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Revathi Krishnan"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000014', 'authenticated', 'authenticated', 'lakshmi.priya@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Lakshmi Priya"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000015', 'authenticated', 'authenticated', 'bala.murugan@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Bala Murugan"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000016', 'authenticated', 'authenticated', 'joseph.antony@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Joseph Antony"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000017', 'authenticated', 'authenticated', 'meenakshi.rajendran@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Meenakshi Rajendran"}', now(), now()),
-    ('00000000-0000-0000-0000-000000000000', '30000000-0000-0000-0000-000000000018', 'authenticated', 'authenticated', 'anand.ravichandran@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Anand Ravichandran"}', now(), now())
+    ('00000000-0000-0000-0000-000000000010', '30000000-0000-0000-0000-000000000010', 'authenticated', 'authenticated', 'fathima.begum@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Fathima Begum"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000011', '30000000-0000-0000-0000-000000000011', 'authenticated', 'authenticated', 'kavitha.sundaram@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Kavitha Sundaram"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000012', '30000000-0000-0000-0000-000000000012', 'authenticated', 'authenticated', 'saravanan.murugesan@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Saravanan Murugesan"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000013', '30000000-0000-0000-0000-000000000013', 'authenticated', 'authenticated', 'revathi.krishnan@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Revathi Krishnan"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000014', '30000000-0000-0000-0000-000000000014', 'authenticated', 'authenticated', 'lakshmi.priya@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Lakshmi Priya"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000015', '30000000-0000-0000-0000-000000000015', 'authenticated', 'authenticated', 'bala.murugan@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Bala Murugan"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000016', '30000000-0000-0000-0000-000000000016', 'authenticated', 'authenticated', 'joseph.antony@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Joseph Antony"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000017', '30000000-0000-0000-0000-000000000017', 'authenticated', 'authenticated', 'meenakshi.rajendran@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Meenakshi Rajendran"}', now(), now()),
+    ('00000000-0000-0000-0000-000000000018', '30000000-0000-0000-0000-000000000018', 'authenticated', 'authenticated', 'anand.ravichandran@faculty.ira.in', crypt('Test@1234', gen_salt('bf')), now(), '{"provider":"email","providers":["email"]}', '{"role":"faculty","full_name":"Dr. Anand Ravichandran"}', now(), now())
 ON CONFLICT (id) DO NOTHING;
 
 -- ----------------------------------------------------------------------------
@@ -87,7 +92,7 @@ BEGIN
         ('30000000-0000-0000-0000-000000000018', '30000000-0000-0000-0000-000000000018', '{"sub":"30000000-0000-0000-0000-000000000018","email":"anand.ravichandran@faculty.ira.in"}'::jsonb, 'email', now(), now(), now())
     ON CONFLICT DO NOTHING;
 EXCEPTION WHEN OTHERS THEN
-    -- Fallback for environments with required provider_id
+    -- Fallback for Supabase versions requiring explicit provider_id column
     BEGIN
         INSERT INTO auth.identities (id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at)
         VALUES
@@ -270,17 +275,67 @@ VALUES
     ('50000000-0000-0000-0000-000000000004', '10000000-0000-0000-0000-000000000002', 'new_application', 'Dr. Sathish Babu submitted an application for Associate Professor in Mechanical (96% match).', true, now())
 ON CONFLICT (id) DO NOTHING;
 
+-- ----------------------------------------------------------------------------
+-- 9. ENSURE ROW LEVEL SECURITY (RLS) POLICIES & TRIGGER ARE ACTIVE
+-- ----------------------------------------------------------------------------
+
+-- Ensure public.profiles has comprehensive policies for anon and authenticated
+DROP POLICY IF EXISTS "profiles_select_all" ON public.profiles;
+CREATE POLICY "profiles_select_all" ON public.profiles FOR SELECT TO authenticated, anon USING (true);
+
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+CREATE POLICY "profiles_insert_own" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+CREATE POLICY "profiles_update_own" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Ensure public.faculty_profiles readable by authenticated and anon for search
+DROP POLICY IF EXISTS "faculty_profiles_select" ON public.faculty_profiles;
+CREATE POLICY "faculty_profiles_select" ON public.faculty_profiles FOR SELECT TO authenticated, anon USING (true);
+
+DROP POLICY IF EXISTS "faculty_profiles_insert_own" ON public.faculty_profiles;
+CREATE POLICY "faculty_profiles_insert_own" ON public.faculty_profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "faculty_profiles_update_own" ON public.faculty_profiles;
+CREATE POLICY "faculty_profiles_update_own" ON public.faculty_profiles FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Ensure public.institutions readable by all
+DROP POLICY IF EXISTS "institutions_select_all" ON public.institutions;
+CREATE POLICY "institutions_select_all" ON public.institutions FOR SELECT TO authenticated, anon USING (true);
+
+DROP POLICY IF EXISTS "institutions_insert_own" ON public.institutions;
+CREATE POLICY "institutions_insert_own" ON public.institutions FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "institutions_update_own" ON public.institutions;
+CREATE POLICY "institutions_update_own" ON public.institutions FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- Ensure public.vacancies open readable by all, owner can insert/update
+DROP POLICY IF EXISTS "vacancies_select_open" ON public.vacancies;
+CREATE POLICY "vacancies_select_open" ON public.vacancies FOR SELECT TO authenticated, anon USING (status = 'open' OR auth.uid() = institution_id);
+
+DROP POLICY IF EXISTS "vacancies_insert_owner" ON public.vacancies;
+CREATE POLICY "vacancies_insert_owner" ON public.vacancies FOR INSERT TO authenticated WITH CHECK (auth.uid() = institution_id);
+
+DROP POLICY IF EXISTS "vacancies_update_owner" ON public.vacancies;
+CREATE POLICY "vacancies_update_owner" ON public.vacancies FOR UPDATE TO authenticated USING (auth.uid() = institution_id) WITH CHECK (auth.uid() = institution_id);
+
+-- Ensure public.applications insertable by faculty
+DROP POLICY IF EXISTS "applications_select_parties" ON public.applications;
+CREATE POLICY "applications_select_parties" ON public.applications FOR SELECT TO authenticated USING (auth.uid() = faculty_id OR EXISTS (SELECT 1 FROM public.vacancies v WHERE v.id = applications.vacancy_id AND v.institution_id = auth.uid()));
+
+DROP POLICY IF EXISTS "applications_insert_faculty" ON public.applications;
+CREATE POLICY "applications_insert_faculty" ON public.applications FOR INSERT TO authenticated WITH CHECK (auth.uid() = faculty_id);
+
+-- Reload PostgREST schema cache
+NOTIFY pgrst, 'reload schema';
+
 COMMIT;
 
 -- ----------------------------------------------------------------------------
--- 9. VERIFICATION QUERY (Record Counts)
+-- 10. VERIFICATION QUERY (Record Counts)
 -- ----------------------------------------------------------------------------
 SELECT 'faculty' AS entity, count(*) FROM public.faculty_profiles
 UNION ALL
 SELECT 'institutions', count(*) FROM public.institutions
 UNION ALL
-SELECT 'vacancies', count(*) FROM public.vacancies
-UNION ALL
-SELECT 'applications', count(*) FROM public.applications
-UNION ALL
-SELECT 'notifications', count(*) FROM public.notifications;
+SELECT 'vacancies', count(*) FROM public.vacancies;

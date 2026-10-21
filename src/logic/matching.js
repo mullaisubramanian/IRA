@@ -50,7 +50,11 @@ export function loadSupabaseFaculty(force = false) {
   isFetchingFaculty = true;
   fetchLiveFacultyProfiles().then(({ data, error }) => {
     isFetchingFaculty = false;
-    if (!error && data) {
+    if (error) {
+      console.error('[Supabase Faculty Load Error]', error);
+      S.supabaseFaculty = [];
+    } else if (data) {
+      console.log('[Supabase Faculty Loaded]', data.length, 'faculty profiles from database');
       S.supabaseFaculty = data.map(row => {
         const fullName = row.profiles?.full_name || 'Faculty Member';
         const qual = row.qualification || 'PG';
@@ -91,8 +95,9 @@ export function loadSupabaseFaculty(force = false) {
       S.supabaseFaculty = [];
     }
     render();
-  }).catch(() => {
+  }).catch((err) => {
     isFetchingFaculty = false;
+    console.error('[Supabase Faculty Load Exception]', err);
     S.supabaseFaculty = [];
     render();
   });

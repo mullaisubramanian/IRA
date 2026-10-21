@@ -168,10 +168,16 @@ ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
 -- 3.1 Policies for profiles
+DROP POLICY IF EXISTS "profiles_select_all" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
-CREATE POLICY "profiles_select_own" ON public.profiles
-    FOR SELECT TO authenticated
-    USING (auth.uid() = id);
+CREATE POLICY "profiles_select_all" ON public.profiles
+    FOR SELECT TO authenticated, anon
+    USING (true);
+
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+CREATE POLICY "profiles_insert_own" ON public.profiles
+    FOR INSERT TO authenticated
+    WITH CHECK (auth.uid() = id);
 
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 CREATE POLICY "profiles_update_own" ON public.profiles
@@ -182,7 +188,7 @@ CREATE POLICY "profiles_update_own" ON public.profiles
 -- 3.2 Policies for faculty_profiles
 DROP POLICY IF EXISTS "faculty_profiles_select" ON public.faculty_profiles;
 CREATE POLICY "faculty_profiles_select" ON public.faculty_profiles
-    FOR SELECT TO authenticated
+    FOR SELECT TO authenticated, anon
     USING (true);
 
 DROP POLICY IF EXISTS "faculty_profiles_insert_own" ON public.faculty_profiles;

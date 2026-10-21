@@ -1,4 +1,4 @@
-/* App state, accounts/session, per-account data, and localStorage persistence (prototype only). */
+/* App state, accounts/session, per-account data, connected to Supabase PostgreSQL. */
 
 /* ======================= 2) STATE + HELPERS ======================== */
 export const D0 = () => ({
@@ -19,12 +19,25 @@ export const D0 = () => ({
 });
 export const blankF = () => ({step:0,max:0,d:D0(),done:{},submitted:false});
 export const blankI = () => ({name:'',email:'',type:'Engineering & Technology',dist:'Coimbatore',contact:'',reqs:[],cur:-1,tab:'best',page:'chat',cands:{}});
+
 export const S = {
   view:'landing',
-  accounts:{}, session:null, profiles:{}, instData:{}, authTab:{faculty:'signup',institution:'signup'},
-  f:blankF(), i:blankI(),
-  rec:null, refocus:null, mapVB:null, enter:true
+  accounts:{},
+  session:null,
+  profiles:{},
+  instData:{},
+  authTab:{faculty:'signup',institution:'signup'},
+  f:blankF(),
+  i:blankI(),
+  supabaseVacancies: null,
+  supabaseFaculty: null,
+  supabaseApplications: [],
+  rec:null,
+  refocus:null,
+  mapVB:null,
+  enter:true
 };
+
 /* Points S.f (faculty) or S.i (institution) at the signed-in account's own data */
 export function attach(){
   const s=S.session;
@@ -33,8 +46,7 @@ export function attach(){
   else {S.i=S.instData[s.email]||blankI();S.f=blankF()}
   D=S.f.d;
 }
-/* Demo-only password hashing. A real build checks passwords on a server. */
-export function hash(str){let h=5381;for(const c of str)h=((h<<5)+h+c.charCodeAt(0))|0;return 'h'+(h>>>0).toString(36)}
+
 export let D = S.f.d;
 
 export const $ = s => document.querySelector(s);
@@ -47,5 +59,29 @@ export const slug = s => s.replace(/[^a-z0-9]/gi,'_');
 export function toast(t,err){document.querySelectorAll('.toast').forEach(x=>x.remove());const el=document.createElement('div');el.className='toast'+(err?' err':'');el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2800)}
 export const KEY='ira_v3';
 export const stripMedia = p => ({...p,d:{...p.d,photo:null,voice:p.d.voice?{dur:p.d.voice.dur,name:p.d.voice.name}:null,video:p.d.video?{dur:p.d.video.dur,name:p.d.video.name}:null}});
-export function save(){try{const profiles={};for(const [e,p] of Object.entries(S.profiles))profiles[e]=stripMedia(p);localStorage.setItem(KEY,JSON.stringify({accounts:S.accounts,session:S.session,profiles,instData:S.instData}))}catch(e){}}
-export function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'null');if(x){S.accounts=x.accounts||{};S.session=x.session||null;S.profiles=x.profiles||{};for(const p of Object.values(S.profiles)){p.d=Object.assign(D0(),p.d);if(!p.d.hasPg&&p.d.pg&&p.d.pg.deg)p.d.hasPg='Yes';if(!p.d.hasPhd&&p.d.phd&&p.d.phd!=='Not applicable')p.d.hasPhd='Yes'}S.instData=x.instData||{}}}catch(e){}attach()}
+
+export function save(){
+  try{
+    const profiles={};
+    for(const [e,p] of Object.entries(S.profiles))profiles[e]=stripMedia(p);
+    localStorage.setItem(KEY,JSON.stringify({accounts:S.accounts,session:S.session,profiles,instData:S.instData}));
+  }catch(e){}
+}
+
+export function load(){
+  try{
+    const x=JSON.parse(localStorage.getItem(KEY)||'null');
+    if(x){
+      S.accounts=x.accounts||{};
+      S.session=x.session||null;
+      S.profiles=x.profiles||{};
+      for(const p of Object.values(S.profiles)){
+        p.d=Object.assign(D0(),p.d);
+        if(!p.d.hasPg&&p.d.pg&&p.d.pg.deg)p.d.hasPg='Yes';
+        if(!p.d.hasPhd&&p.d.phd&&p.d.phd!=='Not applicable')p.d.hasPhd='Yes';
+      }
+      S.instData=x.instData||{};
+    }
+  }catch(e){}
+  attach();
+}

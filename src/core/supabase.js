@@ -3,6 +3,11 @@ import { createClient } from '@supabase/supabase-js';
 export const SUPABASE_URL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_URL) || 'https://vlgviaijtzrxufbzvzps.supabase.co';
 export const SUPABASE_ANON_KEY = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_ANON_KEY) || 'sb_publishable_dcta-ibySlmWcszgWE_b1w_NFX7uLUU';
 
+// Runtime masked logging as requested
+console.log(
+  `[IRA Supabase Runtime] URL: ${SUPABASE_URL} | Key: ${SUPABASE_ANON_KEY.slice(0, 16)}...${SUPABASE_ANON_KEY.slice(-4)}`
+);
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
@@ -12,13 +17,12 @@ export async function testConnection() {
   try {
     const { data, error } = await supabase.from('vacancies').select('id, title, status').limit(1);
     if (error) {
-      if (error.code === 'PGRST205' || error.message?.includes('schema cache')) {
-        return { connected: true, tablesReady: false, message: 'Connected to Supabase. Execute 001_init.sql in SQL Editor to create public tables.' };
-      }
+      console.warn('[IRA Supabase] testConnection error:', error.message);
       return { connected: false, tablesReady: false, error: error.message };
     }
     return { connected: true, tablesReady: true, count: data ? data.length : 0 };
   } catch (err) {
+    console.error('[IRA Supabase] testConnection exception:', err);
     return { connected: false, tablesReady: false, error: err.message };
   }
 }
@@ -27,7 +31,7 @@ export async function testConnection() {
  * Sign up user with metadata passed to auth trigger (which populates public.profiles)
  */
 export async function signUpUser({ email, password, role = 'faculty', fullName = '', phone = '', institutionName = '' }) {
-  return await supabase.auth.signUp({
+  const res = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -39,24 +43,56 @@ export async function signUpUser({ email, password, role = 'faculty', fullName =
       }
     }
   });
+  if (res.error) {
+    console.error('[IRA Supabase] signUpUser error:', res.error);
+  } else {
+    console.log('[IRA Supabase] signUpUser success for:', email, 'userId:', res.data?.user?.id);
+  }
+  return res;
 }
 
 /**
- * Sign in user
+ * Sign in user with password
  */
 export async function signInUser(email, password) {
-  return await supabase.auth.signInWithPassword({ email, password });
+  const res = await supabase.auth.signInWithPassword({ email, password });
+  if (res.error) {
+    console.error('[IRA Supabase] signInUser error:', res.error);
+  } else {
+    console.log('[IRA Supabase] signInUser success for:', email, 'userId:', res.data?.user?.id);
+  }
+  return res;
+}
+
+/**
+ * Sign out user
+ */
+export async function signOutUser() {
+  const res = await supabase.auth.signOut();
+  if (res.error) console.error('[IRA Supabase] signOut error:', res.error);
+  return res;
+}
+
+/**
+ * Get current active session
+ */
+export async function getSession() {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) console.error('[IRA Supabase] getSession error:', error);
+  return { session, error };
 }
 
 /**
  * Fetch current user's profile from public.profiles
  */
 export async function fetchCurrentProfile(userId) {
-  return await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('*, faculty_profiles(*), institutions(*)')
     .eq('id', userId)
     .single();
+  if (error) console.warn('[IRA Supabase] fetchCurrentProfile error:', error.message);
+  return { data, error };
 }
 
 /**
@@ -68,6 +104,7 @@ export async function fetchOpenVacancies() {
     .select('*, institutions(institution_name, city, state, type, contact_person, phone, website)')
     .eq('status', 'open')
     .order('created_at', { ascending: false });
+  if (error) console.error('[IRA Supabase] fetchOpenVacancies error:', error.message);
   return { data, error };
 }
 
@@ -78,6 +115,7 @@ export async function fetchLiveFacultyProfiles() {
   const { data, error } = await supabase
     .from('faculty_profiles')
     .select('*, profiles(full_name, email, role)');
+  if (error) console.error('[IRA Supabase] fetchLiveFacultyProfiles error:', error.message);
   return { data, error };
 }
 
@@ -85,34 +123,53 @@ export async function fetchLiveFacultyProfiles() {
  * Upsert faculty profile in Supabase
  */
 export async function upsertFacultyProfile(userId, { fullName, email, qualification, specialization, experienceYears, location, skills, phone }) {
-  if (userId) {
-    if (fullName || email) {
-      await supabase.from('profiles').upsert({
-        id: userId,
-        full_name: fullName || '',
-        email: email || '',
-        role: 'faculty'
-      }, { onConflict: 'id' });
-    }
-    return await supabase.from('faculty_profiles').upsert({
-      id: userId,
-      qualification: qualification || 'PG',
-      specialization: specialization || '',
-      experience_years: experienceYears || 0,
-      location: location || 'Tamil Nadu',
-      skills: skills || [],
-      phone: phone || '',
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
+  if (!userId) {
+    const err = new Error('User ID required to update faculty profile');
+    console.error('[IRA Supabase] upsertFacultyProfile error:', err);
+    return { data: null, error: err };
   }
-  return { data: null, error: new Error('User ID required') };
+
+  // Update profile full_name if present
+  if (fullName || email) {
+    const { error: pErr } = await supabase.from('profiles').upsert({
+      id: userId,
+      full_name: fullName || '',
+      email: email || '',
+      role: 'faculty'
+    }, { onConflict: 'id' });
+    if (pErr) console.warn('[IRA Supabase] profiles upsert notice:', pErr.message);
+  }
+
+  const res = await supabase.from('faculty_profiles').upsert({
+    id: userId,
+    qualification: qualification || 'PG',
+    specialization: specialization || '',
+    experience_years: experienceYears || 0,
+    location: location || 'Tamil Nadu',
+    skills: skills || [],
+    phone: phone || '',
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'id' });
+
+  if (res.error) {
+    console.error('[IRA Supabase] faculty_profiles upsert error:', res.error);
+  } else {
+    console.log('[IRA Supabase] faculty_profiles upsert success for:', userId);
+  }
+  return res;
 }
 
 /**
  * Post a new vacancy in public.vacancies
  */
 export async function createVacancy(institutionId, { title, department, qualificationRequired, experienceRequired, salaryRange, location, description }) {
-  return await supabase.from('vacancies').insert({
+  if (!institutionId) {
+    const err = new Error('Institution ID required to post vacancy');
+    console.error('[IRA Supabase] createVacancy error:', err);
+    return { data: null, error: err };
+  }
+
+  const res = await supabase.from('vacancies').insert({
     institution_id: institutionId,
     title,
     department,
@@ -123,41 +180,66 @@ export async function createVacancy(institutionId, { title, department, qualific
     description,
     status: 'open'
   }).select().single();
+
+  if (res.error) {
+    console.error('[IRA Supabase] createVacancy error:', res.error);
+  } else {
+    console.log('[IRA Supabase] createVacancy success:', res.data);
+  }
+  return res;
 }
 
 /**
  * Faculty application submission in public.applications
  */
 export async function applyToVacancy({ vacancyId, facultyId, matchScore = 85 }) {
-  return await supabase
+  if (!facultyId || !vacancyId) {
+    const err = new Error('facultyId and vacancyId are required to apply');
+    console.error('[IRA Supabase] applyToVacancy error:', err);
+    return { data: null, error: err };
+  }
+
+  const res = await supabase
     .from('applications')
     .upsert({
       vacancy_id: vacancyId,
       faculty_id: facultyId,
       match_score: matchScore,
       status: 'applied'
-    }, { onConflict: 'vacancy_id, faculty_id' });
+    }, { onConflict: 'vacancy_id, faculty_id' })
+    .select();
+
+  if (res.error) {
+    console.error('[IRA Supabase] applyToVacancy error:', res.error);
+  } else {
+    console.log('[IRA Supabase] applyToVacancy success:', res.data);
+  }
+  return res;
 }
 
 /**
  * Fetch faculty applications
  */
 export async function fetchFacultyApplications(facultyId) {
-  return await supabase
+  const { data, error } = await supabase
     .from('applications')
     .select('*, vacancies(*, institutions(institution_name, city))')
     .eq('faculty_id', facultyId);
+  if (error) console.error('[IRA Supabase] fetchFacultyApplications error:', error.message);
+  return { data, error };
 }
 
 /**
  * Fetch vacancies belonging to an institution
  */
 export async function fetchInstitutionVacancies(institutionId) {
-  return await supabase
+  const { data, error } = await supabase
     .from('vacancies')
-    .select('*, applications(*, faculty_profiles(*, profiles(full_name, email)))')
+    .select('*, applications(*, faculty_profiles(*, profiles(full_name, email, phone)))')
     .eq('institution_id', institutionId)
     .order('created_at', { ascending: false });
+  if (error) console.error('[IRA Supabase] fetchInstitutionVacancies error:', error.message);
+  return { data, error };
 }
 
 /**
@@ -165,6 +247,7 @@ export async function fetchInstitutionVacancies(institutionId) {
  */
 export async function getAuthUser() {
   const { data: { user }, error } = await supabase.auth.getUser();
+  if (error) console.warn('[IRA Supabase] getAuthUser error:', error.message);
   return { user, error };
 }
 
@@ -172,26 +255,42 @@ export async function getAuthUser() {
  * Chat messages in public.chat_messages
  */
 export async function fetchChatMessages(userId) {
-  return await supabase
+  const { data, error } = await supabase
     .from('chat_messages')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: true });
+  if (error) console.error('[IRA Supabase] fetchChatMessages error:', error.message);
+  return { data, error };
 }
 
 export async function sendChatMessage({ userId, role, content }) {
-  return await supabase
+  const res = await supabase
     .from('chat_messages')
-    .insert({ user_id: userId, role, content });
+    .insert({ user_id: userId, role, content })
+    .select();
+  if (res.error) console.error('[IRA Supabase] sendChatMessage error:', res.error);
+  return res;
 }
 
 /**
  * Notifications in public.notifications
  */
 export async function fetchNotifications(userId) {
-  return await supabase
+  const { data, error } = await supabase
     .from('notifications')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
+  if (error) console.error('[IRA Supabase] fetchNotifications error:', error.message);
+  return { data, error };
+}
+
+export async function sendNotification({ userId, type, message }) {
+  const res = await supabase
+    .from('notifications')
+    .insert({ user_id: userId, type, message })
+    .select();
+  if (res.error) console.error('[IRA Supabase] sendNotification error:', res.error);
+  return res;
 }

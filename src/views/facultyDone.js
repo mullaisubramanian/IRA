@@ -26,10 +26,17 @@ export function loadSupabaseVacancies(force = false) {
   isFetchingVacancies = true;
   fetchOpenVacancies().then(({ data, error }) => {
     isFetchingVacancies = false;
-    S.supabaseVacancies = (!error && data) ? data : [];
+    if (error) {
+      console.error('[Supabase Vacancies Load Error]', error);
+      S.supabaseVacancies = [];
+    } else {
+      console.log('[Supabase Vacancies Loaded]', data?.length, 'open vacancies');
+      S.supabaseVacancies = data || [];
+    }
     render();
-  }).catch(() => {
+  }).catch((err) => {
     isFetchingVacancies = false;
+    console.error('[Supabase Vacancies Fetch Exception]', err);
     S.supabaseVacancies = [];
     render();
   });
@@ -37,12 +44,14 @@ export function loadSupabaseVacancies(force = false) {
   if (S.session?.id || S.session?.email) {
     const facultyId = S.session.id;
     if (facultyId) {
-      fetchFacultyApplications(facultyId).then(({ data }) => {
-        if (data) {
+      fetchFacultyApplications(facultyId).then(({ data, error }) => {
+        if (error) {
+          console.warn('[Supabase Applications Fetch Error]', error);
+        } else if (data) {
           S.supabaseApplications = data.map(a => a.vacancy_id);
           render();
         }
-      });
+      }).catch(err => console.warn('[Supabase Applications Fetch Exception]', err));
     }
   }
 }
