@@ -1,6 +1,6 @@
 -- ============================================================================
 -- supabase/seed.sql
--- IRA (Intelligent Recruitment Assessment) Complete Database Seed
+-- IRA (Intelligent Recruitment Assistant) Complete Database Seed
 -- All sample institutions, vacancies, faculty profiles, applications & notifications
 -- Ready to paste into Supabase SQL Editor and click RUN.
 -- Safe, idempotent execution wrapped in BEGIN ... COMMIT.

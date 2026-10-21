@@ -29,7 +29,7 @@ export function renderLanding(){
 
   return `<section class="hero"><div class="hero-in">
       <div>
-        <p class="ira-word" aria-label="IRA stands for Intelligent Recruitment Assessment"><span><b>I</b>ntelligent</span><span><b>R</b>ecruitment</span><span><b>A</b>ssessment</span></p>
+        <p class="ira-word" aria-label="IRA stands for Intelligent Recruitment Assistant"><span><b>I</b>ntelligent</span><span><b>R</b>ecruitment</span><span><b>A</b>ssistant</span></p>
         <h1>The right professor for <span class="hl">every classroom.</span></h1>
         <p class="lead">IRA connects faculty members with colleges across Tamil Nadu. Faculty build one profile, institutions describe the role in a chat, and IRA finds the people who truly fit.</p>
         <div class="flow"><span><b>1</b>Build a profile</span><span><b>2</b>Take a short assessment</span><span><b>3</b>Get matched</span><span><b>4</b>Interview</span></div>
@@ -40,5 +40,5 @@ export function renderLanding(){
       ${showFacultyDoor ? `<div class="door fac"><div class="ico">${ICON.cap}</div><h3>I'm a faculty member</h3><p>Create your profile once and hear from colleges whenever a role matches you.</p><button class="btn gold" data-act="goFaculty">${isFac ? 'Go to my faculty profile' : 'Create faculty profile'}</button></div>` : ''}
       ${showInstDoor ? `<div class="door ins"><div class="ico">${ICON.inst}</div><h3>I'm hiring for an institution</h3><p>Describe the vacancy in your own words. IRA asks what's missing and shows ranked profiles.</p><button class="btn jade" data-act="goInst">${isInst ? 'Go to recruitment portal' : 'Post a vacancy'}</button></div>` : ''}
     </section>
-    <p class="foot">Prototype. Data stays in this browser. <a href="#" data-act="resetAll">Reset demo data</a></p>`;
+    <p class="foot">IRA · Intelligent Recruitment Assistant · Powered by Supabase PostgreSQL</p>`;
 }

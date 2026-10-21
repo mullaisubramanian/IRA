@@ -1,4 +1,4 @@
-# IRA · Intelligent Recruitment Assessment
+# IRA · Intelligent Recruitment Assistant
 
 IRA matches faculty members with colleges across Tamil Nadu. Faculty build one profile; institutions describe a vacancy in a chat; IRA ranks the best-fit, similar and "worth a look" profiles and helps schedule interviews.
 

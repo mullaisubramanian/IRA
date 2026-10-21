@@ -1,5 +1,5 @@
 -- ============================================================================
--- IRA (Intelligent Recruitment Assessment) Clean Supabase Setup
+-- IRA (Intelligent Recruitment Assistant) Clean Supabase Setup
 -- Target: Schema public (Direct execution in Supabase SQL Editor)
 -- ============================================================================
 

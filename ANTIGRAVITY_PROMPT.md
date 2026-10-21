@@ -1,4 +1,4 @@
-Open this folder as the workspace. It is a working Vite + vanilla JavaScript npm project for IRA (Intelligent Recruitment Assessment), a recruitment platform that connects faculty members with colleges in Tamil Nadu. Recreate and run it exactly as it is, then keep improving it without changing its behaviour or design.
+Open this folder as the workspace. It is a working Vite + vanilla JavaScript npm project for IRA (Intelligent Recruitment Assistant), a recruitment platform that connects faculty members with colleges in Tamil Nadu. Recreate and run it exactly as it is, then keep improving it without changing its behaviour or design.
 
 STEP 1: RUN IT
 - Run `npm install`, then `npm run dev`, and open the local URL in the browser preview.
@@ -8,7 +8,7 @@ STEP 1: RUN IT
 STEP 2: KEEP THIS DESIGN EXACTLY
 - Turquoise theme. Colour tokens live in src/styles/base.css: deep turquoise #06393C (top bar, sidebars, hero), turquoise #0C8F8B (buttons, selected chips), bright turquoise #1CC3BD (hover, highlights), marigold #F2A93B (accent), green #2F9E5E (match), coral #E8604C (mismatch). Never reintroduce blue.
 - Fonts: Bricolage Grotesque for headings, Manrope for body text.
-- The home page spells out IRA as "Intelligent Recruitment Assessment" (first letters highlighted), shows the headline "The right professor for every classroom.", a short explanation, an animated Tamil Nadu map that draws match lines, and two cards: faculty and institution.
+- The home page spells out IRA as "Intelligent Recruitment Assistant" (first letters highlighted), shows the headline "The right professor for every classroom.", a short explanation, an animated Tamil Nadu map that draws match lines, and two cards: faculty and institution.
 - The layout must work from 390px mobile to desktop.
 
 STEP 3: KEEP THESE RULES

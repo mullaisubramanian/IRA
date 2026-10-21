@@ -1,6 +1,6 @@
 -- ============================================================================
 -- 001_init.sql
--- IRA (Intelligent Recruitment Assessment) Database Initialization
+-- IRA (Intelligent Recruitment Assistant) Database Initialization
 -- All tables created in schema: public and linked to auth.users
 -- ============================================================================
 

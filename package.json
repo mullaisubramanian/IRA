@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "IRA (Intelligent Recruitment Assessment): faculty and institution recruitment platform",
+  "description": "IRA (Intelligent Recruitment Assistant): faculty and institution recruitment platform",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

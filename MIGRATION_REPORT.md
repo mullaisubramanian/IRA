@@ -1,7 +1,7 @@
 # Database Schema & Migration Report: `auth` to `public`
 
 ## 1. Executive Summary
-This report documents the architectural analysis and migration of all application-specific tables from the Supabase `auth` schema into the `public` schema for the **IRA (Intelligent Recruitment Assessment)** platform.
+This report documents the architectural analysis and migration of all application-specific tables from the Supabase `auth` schema into the `public` schema for the **IRA (Intelligent Recruitment Assistant)** platform.
 
 All Supabase system-managed internal authentication objects (e.g., `auth.users`, `auth.refresh_tokens`, `auth.sessions`, etc.) have been strictly protected and left untouched to ensure that Supabase's Auth service continues to function normally. All custom application objects are now consolidated and targeted exclusively under `public`.
 
