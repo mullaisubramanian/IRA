@@ -40,5 +40,5 @@ export function renderLanding(){
       ${showFacultyDoor ? `<div class="door fac"><div class="ico">${ICON.cap}</div><h3>I'm a faculty member</h3><p>Create your profile once and hear from colleges whenever a role matches you.</p><button class="btn gold" data-act="goFaculty">${isFac ? 'Go to my faculty profile' : 'Create faculty profile'}</button></div>` : ''}
       ${showInstDoor ? `<div class="door ins"><div class="ico">${ICON.inst}</div><h3>I'm hiring for an institution</h3><p>Describe the vacancy in your own words. IRA asks what's missing and shows ranked profiles.</p><button class="btn jade" data-act="goInst">${isInst ? 'Go to recruitment portal' : 'Post a vacancy'}</button></div>` : ''}
     </section>
-    <p class="foot">IRA · Intelligent Recruitment Assistant · Powered by Supabase PostgreSQL</p>`;
+    <p class="foot">IRA · Intelligent Recruitment Assistant</p>`;
 }

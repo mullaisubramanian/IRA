@@ -138,7 +138,7 @@ export function renderFacultyDone(){
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
         <div>
           <h4 style="margin:0;font-size:18px;">Live College Vacancies & Job Descriptions</h4>
-          <p class="muted" style="margin:4px 0 0;font-size:13.5px;">${isLoading ? 'Loading active vacancies from Supabase...' : `${allVac.length} open faculty positions currently active in Tamil Nadu colleges`}</p>
+          <p class="muted" style="margin:4px 0 0;font-size:13.5px;">${isLoading ? 'Loading active vacancies...' : `${allVac.length} open faculty positions currently active in Tamil Nadu colleges`}</p>
         </div>
         ${!isLoading && allVac.length ? `<span class="pill jade">${allVac.filter(v=>v.score>=90).length} High Match</span>` : ''}
       </div>
@@ -147,15 +147,15 @@ export function renderFacultyDone(){
         <!-- Loading State -->
         <div style="padding:48px 16px;text-align:center;">
           <div class="seal" style="margin:0 auto 16px;background:var(--mist);color:var(--indigo);animation:pulse 1.4s infinite;">${ICON.search || '🔍'}</div>
-          <h4 style="margin:0 0 6px;color:var(--navy);">Loading Live Vacancies from Supabase...</h4>
-          <p class="muted" style="margin:0;font-size:13px;">Connecting to public.vacancies table to match current requirements.</p>
+          <h4 style="margin:0 0 6px;color:var(--navy);">Loading Live Vacancies...</h4>
+          <p class="muted" style="margin:0;font-size:13px;">Matching available positions with your profile.</p>
         </div>
       ` : allVac.length === 0 ? `
         <!-- Empty State -->
         <div style="padding:40px 16px;text-align:center;">
           <div class="seal" style="margin:0 auto 14px;background:var(--mist);color:var(--ink-3);">${ICON.building || '🏛️'}</div>
           <h4 style="margin:0 0 6px;color:var(--navy);">No Open Vacancies Found</h4>
-          <p class="muted" style="margin:0 auto 16px;max-width:440px;font-size:13px;">There are no active openings currently stored in the database. Run the seed script or wait for colleges to post requirements.</p>
+          <p class="muted" style="margin:0 auto 16px;max-width:440px;font-size:13px;">There are no active openings matching your profile right now. Please check back soon or refresh.</p>
           <button class="btn sm" onclick="window.__ira_reloadVacancies && window.__ira_reloadVacancies()">↻ Refresh vacancies</button>
         </div>
       ` : `
