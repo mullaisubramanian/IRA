@@ -54,3 +54,6 @@ select.in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns=
 .chip.disabled, .chip[disabled]{opacity:.38;cursor:not-allowed !important;background:var(--mist);border-color:var(--line);color:var(--ink-3);pointer-events:none}
 .tag-select{border:1.5px solid var(--indigo);background-color:var(--indigo-soft);color:var(--indigo-ink);font-weight:600;cursor:pointer}
 .tag-select:focus{border-color:var(--indigo-ink)}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.35);border-radius:50%;border-top-color:#fff;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+

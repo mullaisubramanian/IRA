@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.faculty_profiles (
     skills TEXT[] DEFAULT '{}',
     resume_url TEXT,
     phone TEXT,
+    details JSONB DEFAULT '{}'::jsonb,
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 

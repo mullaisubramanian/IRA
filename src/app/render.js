@@ -40,7 +40,12 @@ export function renderNow(){
   if(S.view==='faculty')app.innerHTML=gate('faculty',renderFaculty);
   if(S.view==='inst')app.innerHTML=gate('institution',renderInst);
   const ac=$('#acct');
-  if(S.session){const a=S.accounts[S.session.email]||{name:''};ac.innerHTML=`<div class="av">${initials(a.name||'U')}</div><div class="who">${esc(a.name)}<small>${S.session.role==='faculty'?'Faculty account':'Institution account'}</small></div><button class="out" data-act="signOut">Sign out</button>`;ac.style.display='flex'}
+  if(S.session){
+    const a=S.accounts[S.session.email]||{name:''};
+    const displayName=S.session.name||a.name||(S.session.email?S.session.email.split('@')[0]:'User');
+    ac.innerHTML=`<div class="av">${initials(displayName||'U')}</div><div class="who">${esc(displayName)}<small>${S.session.role==='faculty'?'Faculty account':'Institution account'}</small></div><button class="out" data-act="signOut">Sign out</button>`;
+    ac.style.display='flex';
+  }
   else{ac.innerHTML='';ac.style.display='none'}
   if(chatScroll!=null&&$('#chat'))$('#chat').scrollTop=chatScroll;
   S.enter=false;

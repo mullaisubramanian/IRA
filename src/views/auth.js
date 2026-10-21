@@ -7,15 +7,15 @@ import { newReq } from './institution.js';
 import { signUpUser, signInUser } from '../core/supabase.js';
 
 /* ======================= ACCOUNTS ================================== */
-export const af=(l,id,type,ph,auto)=>`<div class="field"><label for="${id}">${l}<span class="req">*</span></label><input class="in" id="${id}" type="${type}" placeholder="${esc(ph)}" autocomplete="${auto||'off'}"></div>`;
+export const af=(l,id,type,ph,auto,val)=>`<div class="field"><label for="${id}">${l}<span class="req">*</span></label><input class="in" id="${id}" type="${type}" placeholder="${esc(ph)}" value="${esc(val||'')}" autocomplete="${auto||'off'}"></div>`;
 
 export function renderAuth(role){
   const fac=role==='faculty', tab=S.authTab[role];
   const side=fac?`<h2>One profile. Every college that fits.</h2><p>Create your faculty account to build your profile and get matched with colleges across Tamil Nadu.</p>`
                 :`<h2>Describe the role. IRA finds the people.</h2><p>Create an institution account to post vacancies, see matched faculty and schedule interviews.</p>`;
   const pw=`<div class="grid">${af('Password','aPass','password','At least 6 characters','new-password')}${af('Confirm password','aPass2','password','Repeat password','new-password')}</div>`;
-  const fields = tab==='login' ? `${af('Email ID','aEmail','email','you@email.com','email')}${af('Password','aPass','password','Your password','current-password')}`
-    : fac ? `${af('Full name','aName','text','As in your certificates','name')}${af('Email ID','aEmail','email','you@email.com','email')}${af('Mobile number','aMobile','tel','98xxx xxxxx','tel')}${pw}`
+  const fields = tab==='login' ? `${af('Email ID','aEmail','email','you@email.com','email',fac?D.email:'')}${af('Password','aPass','password','Your password','current-password')}`
+    : fac ? `${af('Full name','aName','text','As in your certificates','name',D.name)}${af('Email ID','aEmail','email','you@email.com','email',D.email)}${af('Mobile number','aMobile','tel','98xxx xxxxx','tel',D.mobile)}${pw}`
     : `${af('Institution name','aInst','text','e.g. Sri Ramakrishna College of Arts & Science','organization')}
        <div class="grid"><div class="field"><label for="aType">Institution type<span class="req">*</span></label><select class="in" id="aType">${Object.keys(INST_TYPES).map(t=>`<option>${t}</option>`).join('')}</select></div>
        <div class="field"><label for="aDist">District<span class="req">*</span></label><select class="in" id="aDist">${districtsOf('Tamil Nadu').map(t=>`<option ${t==='Coimbatore'?'selected':''}>${t}</option>`).join('')}</select></div></div>
@@ -124,10 +124,18 @@ document.addEventListener('submit', async e => {
           name
         };
         if (role === 'faculty') {
-          const p = blankF();
-          p.d.name = name;
-          p.d.email = email;
-          p.d.mobile = v('aMobile');
+          const existing = S.profiles[email] || S.f || blankF();
+          const p = {
+            ...existing,
+            d: {
+              ...D0(),
+              ...D,
+              ...existing.d,
+              name: name || existing.d?.name || D.name,
+              email: email || existing.d?.email || D.email,
+              mobile: v('aMobile') || existing.d?.mobile || D.mobile
+            }
+          };
           S.profiles[email] = p;
         } else {
           S.instData[email] = {

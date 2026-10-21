@@ -122,7 +122,7 @@ export async function fetchLiveFacultyProfiles() {
 /**
  * Upsert faculty profile in Supabase
  */
-export async function upsertFacultyProfile(userId, { fullName, email, qualification, specialization, experienceYears, location, skills, phone }) {
+export async function upsertFacultyProfile(userId, { fullName, email, qualification, specialization, experienceYears, currentInstitution, location, skills, resumeUrl, phone, details }) {
   if (!userId) {
     const err = new Error('User ID required to update faculty profile');
     console.error('[IRA Supabase] upsertFacultyProfile error:', err);
@@ -140,16 +140,34 @@ export async function upsertFacultyProfile(userId, { fullName, email, qualificat
     if (pErr) console.warn('[IRA Supabase] profiles upsert notice:', pErr.message);
   }
 
-  const res = await supabase.from('faculty_profiles').upsert({
+  const basePayload = {
     id: userId,
     qualification: qualification || 'PG',
     specialization: specialization || '',
-    experience_years: experienceYears || 0,
+    experience_years: experienceYears != null ? experienceYears : 0,
+    current_institution: currentInstitution || '',
     location: location || 'Tamil Nadu',
     skills: skills || [],
+    resume_url: resumeUrl || '',
     phone: phone || '',
     updated_at: new Date().toISOString()
-  }, { onConflict: 'id' });
+  };
+
+  let res;
+  if (details && typeof details === 'object') {
+    res = await supabase.from('faculty_profiles').upsert({
+      ...basePayload,
+      details
+    }, { onConflict: 'id' }).select();
+
+    // If 'details' column is not in schema cache (PGRST204), fallback gracefully to basePayload
+    if (res.error && res.error.code === 'PGRST204') {
+      console.warn('[IRA Supabase] details column not yet present in schema, falling back to standard columns.');
+      res = await supabase.from('faculty_profiles').upsert(basePayload, { onConflict: 'id' }).select();
+    }
+  } else {
+    res = await supabase.from('faculty_profiles').upsert(basePayload, { onConflict: 'id' }).select();
+  }
 
   if (res.error) {
     console.error('[IRA Supabase] faculty_profiles upsert error:', res.error);

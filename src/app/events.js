@@ -151,84 +151,200 @@ export const ACTIONS={
     const err=REQUIRED[st]&&REQUIRED[st]();if(err){failStep(err);return}
     S.f.done[st]=true;go(()=>S.f.step=i)},
   prev:()=>go(()=>S.f.step=Math.max(0,S.f.step-1)),
-  saveDraft:()=>{save();toast('Draft saved')},
-  next:async ()=>{const st=S.f.step;const err=REQUIRED[st]&&REQUIRED[st]();if(err){failStep(err);return}
-    S.f.done[st]=true;
-    if(st===STEPS.length-1){
-      const miss=STEPS.findIndex((_,i)=>REQUIRED[i]&&REQUIRED[i]());
-      if(miss>=0){toast('Please complete: '+STEPS[miss][0],true);return go(()=>S.f.step=miss)}
-      S.f.submitted=true;save();toast('Profile submitted');
-      // Persist to Supabase public.profiles and public.faculty_profiles
+  saveDraft: async () => {
+    save();
+    try {
+      const { user } = await getAuthUser();
+      const uid = user?.id || (S.session && S.session.id);
+      if (uid) {
+        const deptsList = []; Object.values(D.depts||{}).forEach(arr=>(arr||[]).forEach(x=>deptsList.push(x)));
+        const subjList = []; Object.values(D.subjects||{}).forEach(arr=>(arr||[]).forEach(x=>subjList.push(x)));
+        const span = e => yearsBetween(ym(e.fromY,e.fromM),ym(e.toY,e.toM));
+        const expA = (D.acad||[]).reduce((s,e)=>s+span(e),0), expI = (D.ind||[]).reduce((s,e)=>s+span(e),0);
+        const qual = D.phd==='Completed'?'PhD':(D.phd==='Pursuing'||D.phd==='Thesis submitted'?'PhD (pursuing)':(!D.pg?.deg?'UG':(D.tests||[]).some(t=>/NET|SET/.test(t))?'PG + NET/SET':'PG'));
+        await upsertFacultyProfile(uid, {
+          fullName: D.name,
+          email: S.session?.email || D.email,
+          qualification: qual,
+          specialization: deptsList.join(', ') || D.pg?.spec || D.ug?.spec || 'General',
+          experienceYears: Math.round((expA+expI)*10)/10,
+          currentInstitution: D.acad?.[0]?.college || D.ind?.[0]?.company || '',
+          location: D.district ? `${D.district}, ${D.state||'Tamil Nadu'}` : (D.state || 'Tamil Nadu'),
+          skills: subjList.length ? subjList : ['Core Faculty'],
+          resumeUrl: D.resume?.url || D.resume?.name || '',
+          phone: D.mobile || '',
+          details: { ...D, photo: D.photo ? { name: D.photo.name } : null }
+        });
+      }
+    } catch(e) {
+      console.warn('[Save Draft Supabase]', e);
+    }
+    toast('Draft saved');
+  },
+  next: async () => {
+    const st = S.f.step;
+    const err = REQUIRED[st] && REQUIRED[st]();
+    if (err) { failStep(err); return; }
+    S.f.done[st] = true;
+
+    if (st === STEPS.length - 1) {
+      // 1. Validate all wizard steps before submission
+      const miss = STEPS.findIndex((_, i) => REQUIRED[i] && REQUIRED[i]());
+      if (miss >= 0) {
+        toast(`Please complete: ${STEPS[miss][0]}`, true);
+        return go(() => S.f.step = miss);
+      }
+
+      // 2. Verify Supabase authentication
+      const { user } = await getAuthUser();
+      const uid = user?.id || (S.session && S.session.id);
+      if (!uid) {
+        save();
+        toast('Please create an account or log in to submit your profile. Your entered data is preserved.', true);
+        return go(() => {
+          S.authTab.faculty = 'signup';
+          S.view = 'faculty';
+          S.session = null;
+        });
+      }
+
+      // 3. UI Loading Feedback: disable submit button and show spinner
+      const submitBtn = document.getElementById('nextBtn');
+      const origText = submitBtn ? submitBtn.innerHTML : 'Submit profile';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Submitting profile to Supabase...';
+      }
+
+      try {
+        // 4. Construct complete payload
+        const deptsList = []; Object.values(D.depts || {}).forEach(arr => (arr || []).forEach(x => deptsList.push(x)));
+        const subjList = []; Object.values(D.subjects || {}).forEach(arr => (arr || []).forEach(x => subjList.push(x)));
+        const span = e => yearsBetween(ym(e.fromY, e.fromM), ym(e.toY, e.toM));
+        const expA = (D.acad || []).reduce((s, e) => s + span(e), 0), expI = (D.ind || []).reduce((s, e) => s + span(e), 0);
+        const qual = D.phd === 'Completed' ? 'PhD' : (D.phd === 'Pursuing' || D.phd === 'Thesis submitted' ? 'PhD (pursuing)' : (!D.pg?.deg ? 'UG' : (D.tests || []).some(t => /NET|SET/.test(t)) ? 'PG + NET/SET' : 'PG'));
+        const currentInst = D.acad?.[0]?.college || D.ind?.[0]?.company || '';
+        const loc = D.district ? `${D.district}, ${D.state || 'Tamil Nadu'}` : (D.state || 'Tamil Nadu');
+
+        // Clean details object for JSONB persistence (strip raw media streams/blobs)
+        const detailsData = {
+          ...D,
+          photo: D.photo ? { name: D.photo.name } : null,
+          voice: D.voice ? { name: D.voice.name, dur: D.voice.dur } : null,
+          video: D.video ? { name: D.video.name, dur: D.video.dur } : null,
+          resume: D.resume ? { name: D.resume.name } : null,
+          certFiles: D.certFiles ? { name: D.certFiles.name } : null
+        };
+
+        const res = await upsertFacultyProfile(uid, {
+          fullName: D.name,
+          email: S.session?.email || D.email,
+          qualification: qual,
+          specialization: deptsList.join(', ') || D.pg?.spec || D.ug?.spec || 'General',
+          experienceYears: Math.round((expA + expI) * 10) / 10,
+          currentInstitution: currentInst,
+          location: loc,
+          skills: subjList.length ? subjList : ['Core Faculty'],
+          resumeUrl: D.resume?.url || D.resume?.name || '',
+          phone: D.mobile || '',
+          details: detailsData
+        });
+
+        if (res.error) {
+          console.error('[Supabase Faculty Profile Upsert Error]', res.error);
+          toast('Submission failed: ' + res.error.message, true);
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = origText;
+          }
+          return; // Do NOT navigate away, keep entered data intact!
+        }
+
+        // 5. Successful save confirmed by Supabase!
+        console.log('[Supabase Faculty Profile Upsert Success] Saved for:', uid);
+        S.f.submitted = true;
+        save();
+        toast('Profile submitted and saved to Supabase successfully!');
+        return go(() => S.view = 'faculty'); // Navigates to renderFacultyDone
+      } catch (err) {
+        console.error('[Supabase Faculty Profile Upsert Exception]', err);
+        toast('Submission exception: ' + err.message, true);
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = origText;
+        }
+        return;
+      }
+    }
+
+    S.f.max = Math.max(S.f.max, st + 1);
+    save();
+    go(() => S.f.step = st + 1);
+  },
+  editProfile: () => go(() => { S.f.submitted = false; S.f.step = 0; }),
+  addRow: a => {
+    const k = a.dataset.k;
+    const tmpl = {
+      acad: { college: '', desig: '', dept: '', subj: '', fromM: '', fromY: '', toM: '', toY: '' },
+      ind: { company: '', role: '', domain: '', work: '', fromM: '', fromY: '', toM: '', toY: '' },
+      projects: { title: '', client: '', year: '', link: '', desc: '', file: null },
+      startups: { name: '', type: '', inc: '', dur: '' },
+      aiTools: { tool: '', other: '', purposes: [], level: '', ex: '' }
+    }[k];
+    D[k].push(JSON.parse(JSON.stringify(tmpl)));
+    save();
+    render();
+  },
+  rmRow: a => { D[a.dataset.k].splice(+a.dataset.i, 1); save(); render(); },
+  rmTag: a => { const arr = getP(D, a.dataset.k); arr.splice(+a.dataset.i, 1); save(); render(); },
+  addTag: a => { addTag(a.dataset.k, a.dataset.v); render(); },
+  selectTag: a => { if (a.value) { addTag(a.dataset.k, a.value); a.value = ''; render(); } },
+  addTagBtn: a => {
+    const k = a.dataset.k;
+    const inp = document.querySelector(`input[data-tag="${k}"]`);
+    if (inp && inp.value.trim()) {
+      addTag(k, inp.value.trim());
+      inp.value = '';
+      render();
+    } else {
+      toast('Type or pick a subject first', true);
+    }
+  },
+  applyVacancy: async a => {
+    const id = a.dataset.id;
+    D.appliedVacancies = D.appliedVacancies || [];
+    if (!D.appliedVacancies.includes(id)) {
+      a.disabled = true;
+      const prevHtml = a.innerHTML;
+      a.innerHTML = '<span class="spinner"></span> Applying...';
       try {
         const { user } = await getAuthUser();
         const uid = user?.id || (S.session && S.session.id);
         if (uid) {
-          const deptsList = []; Object.values(D.depts||{}).forEach(arr=>(arr||[]).forEach(x=>deptsList.push(x)));
-          const subjList = []; Object.values(D.subjects||{}).forEach(arr=>(arr||[]).forEach(x=>subjList.push(x)));
-          const span = e => yearsBetween(ym(e.fromY,e.fromM),ym(e.toY,e.toM));
-          const expA = (D.acad||[]).reduce((s,e)=>s+span(e),0), expI = (D.ind||[]).reduce((s,e)=>s+span(e),0);
-          const qual = D.phd==='Completed'?'PhD':(D.phd==='Pursuing'||D.phd==='Thesis submitted'?'PhD (pursuing)':(!D.pg.deg?'UG':(D.tests||[]).some(t=>/NET|SET/.test(t))?'PG + NET/SET':'PG'));
-          const { error } = await upsertFacultyProfile(uid, {
-            fullName: D.name,
-            email: S.session?.email || D.email,
-            qualification: qual,
-            specialization: deptsList.join(', '),
-            experienceYears: Math.round((expA+expI)*10)/10,
-            location: D.district || D.state || 'Tamil Nadu',
-            skills: subjList,
-            phone: D.mobile || ''
-          });
-          if (error) {
-            console.error('[Supabase Faculty Profile Upsert Error]', error);
-            toast('Notice: Profile saved locally, but database sync error: ' + error.message, true);
-          } else {
-            console.log('[Supabase Faculty Profile Upsert Success] Saved for:', uid);
-            toast('Profile submitted and saved to Supabase successfully!');
-          }
-        } else {
-          console.warn('[Supabase Faculty Profile] No authenticated user ID. Sign up or log in to sync database.');
-        }
-      } catch (e) {
-        console.error('[Supabase Faculty Profile Upsert Exception]', e);
-        toast('Database sync exception: ' + e.message, true);
-      }
-      return go(()=>{});
-    }
-    S.f.max=Math.max(S.f.max,st+1);save();go(()=>S.f.step=st+1)},
-  editProfile:()=>go(()=>{S.f.submitted=false;S.f.step=0}),
-  addRow:a=>{const k=a.dataset.k;const tmpl={acad:{college:'',desig:'',dept:'',subj:'',fromM:'',fromY:'',toM:'',toY:''},ind:{company:'',role:'',domain:'',work:'',fromM:'',fromY:'',toM:'',toY:''},projects:{title:'',client:'',year:'',link:'',desc:'',file:null},startups:{name:'',type:'',inc:'',dur:''},aiTools:{tool:'',other:'',purposes:[],level:'',ex:''}}[k];D[k].push(JSON.parse(JSON.stringify(tmpl)));save();render()},
-  rmRow:a=>{D[a.dataset.k].splice(+a.dataset.i,1);save();render()},
-  rmTag:a=>{const arr=getP(D,a.dataset.k);arr.splice(+a.dataset.i,1);save();render()},
-  addTag:a=>{addTag(a.dataset.k,a.dataset.v);render()},
-  selectTag:a=>{if(a.value){addTag(a.dataset.k,a.value);a.value='';render()}},
-  addTagBtn:a=>{const k=a.dataset.k;const inp=document.querySelector(`input[data-tag="${k}"]`);if(inp&&inp.value.trim()){addTag(k,inp.value.trim());inp.value='';render()}else{toast('Type or pick a subject first',true)}},
-  applyVacancy:async a=>{
-    const id=a.dataset.id;
-    D.appliedVacancies=D.appliedVacancies||[];
-    if(!D.appliedVacancies.includes(id)){
-      D.appliedVacancies.push(id);
-      save();render();
-      try{
-        const { user } = await getAuthUser();
-        const uid = user?.id || (S.session && S.session.id);
-        if(uid){
           const { data, error } = await applyToVacancy({ vacancyId: id, facultyId: uid, matchScore: 88 });
           if (error) {
             console.error('[Supabase Application Error]', error);
             toast('Application saved locally, but database sync error: ' + error.message, true);
+            a.disabled = false;
+            a.innerHTML = prevHtml;
           } else {
-            console.log('[Supabase Application Success]', data);
+            D.appliedVacancies.push(id);
+            save();
+            render();
             toast('Application submitted! College recruitment team has received your profile.');
           }
         } else {
-          console.warn('[Supabase Application] Faculty not logged in with Supabase auth.');
-          toast('Application saved locally. Sign in to sync with the college.', true);
+          toast('Please sign in as a faculty member to apply.', true);
+          a.disabled = false;
+          a.innerHTML = prevHtml;
         }
-      }catch(err){
+      } catch (err) {
         console.error('[Supabase Application Sync Exception]', err);
         toast('Application sync exception: ' + err.message, true);
+        a.disabled = false;
+        a.innerHTML = prevHtml;
       }
-    }else{
+    } else {
       toast('You have already applied for this opening.');
     }
   },
