@@ -21,7 +21,9 @@
   .cands{grid-template-columns:1fr}
   .facts{grid-template-columns:1fr 1fr}
   .login{grid-template-columns:1fr}
-  .login .side{padding:36px 24px}
+  .login .side{padding:36px 24px;overflow:hidden}
+  .login .side::after{pointer-events:none!important}
+  .login .form{position:relative;z-index:10}
   .login .side h2{font-size:30px}
   .topbar{padding:0 16px}
   .topnav button{padding:8px 10px;font-size:13px}

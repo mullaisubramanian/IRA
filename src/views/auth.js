@@ -7,8 +7,41 @@ import { newReq } from './institution.js';
 import { signUpUser, signInUser, upsertInstitutionProfile, supabase } from '../core/supabase.js';
 import { getFriendlyAuthError } from '../lib/authErrors.js';
 
+/* Email state management for auth forms */
+let authEmail = '';
+
+export function getAuthEmail() {
+  return authEmail;
+}
+
+export function setAuthEmail(val) {
+  authEmail = String(val || '');
+}
+
+// Keep authEmail synced on input, change, and paste across tabs
+document.addEventListener('input', e => {
+  if (e.target && e.target.id === 'aEmail') {
+    authEmail = e.target.value;
+    if (D) D.email = e.target.value;
+  }
+});
+document.addEventListener('change', e => {
+  if (e.target && e.target.id === 'aEmail') {
+    authEmail = e.target.value;
+    if (D) D.email = e.target.value;
+  }
+});
+document.addEventListener('paste', e => {
+  if (e.target && e.target.id === 'aEmail') {
+    setTimeout(() => {
+      authEmail = e.target.value;
+      if (D) D.email = e.target.value;
+    }, 0);
+  }
+});
+
 /* ======================= ACCOUNTS ================================== */
-export const af = (l, id, type, ph, auto, val) => `<div class="field"><label for="${id}">${l}<span class="req">*</span></label><input class="in" id="${id}" type="${type}" placeholder="${esc(ph)}" value="${esc(val || '')}" autocomplete="${auto || 'off'}"></div>`;
+export const af = (l, id, type, ph, auto, val) => `<div class="field"><label for="${id}">${l}<span class="req">*</span></label><input class="in" id="${id}" name="${id}" type="${type}" placeholder="${esc(ph)}" value="${esc(val ?? '')}" autocomplete="${auto || 'off'}"></div>`;
 
 export function renderAuth(role) {
   const fac = role === 'faculty', tab = S.authTab[role] || 'signup';
@@ -20,17 +53,19 @@ export function renderAuth(role) {
 
   const pw = `<div class="grid">${af('Password', 'aPass', 'password', 'At least 8 characters', 'new-password')}${af('Confirm password', 'aPass2', 'password', 'Repeat password', 'new-password')}</div>`;
 
+  const emailVal = authEmail || (fac ? D.email : '') || '';
+
   const fields = tab === 'reset'
-    ? `${af('Registered email ID', 'aEmail', 'email', 'you@email.com', 'email', fac ? D.email : '')}`
+    ? `${af('Registered email ID', 'aEmail', 'email', 'you@email.com', 'email', emailVal)}`
     : tab === 'login'
-    ? `${af('Email ID', 'aEmail', 'email', 'you@email.com', 'email', fac ? D.email : '')}${af('Password', 'aPass', 'password', 'Your password', 'current-password')}
+    ? `${af('Email ID', 'aEmail', 'email', 'you@email.com', 'email', emailVal)}${af('Password', 'aPass', 'password', 'Your password', 'current-password')}
        <div style="text-align:right;margin-top:-6px"><button type="button" class="as-link" data-act="authTab" data-role="${role}" data-v="reset" style="background:none;border:none;color:var(--gold);font-size:12px;cursor:pointer;padding:0">Forgot password?</button></div>`
-    : fac ? `${af('Full name', 'aName', 'text', 'As in your certificates', 'name', D.name)}${af('Email ID', 'aEmail', 'email', 'you@email.com', 'email', D.email)}${af('Mobile number', 'aMobile', 'tel', '98xxx xxxxx', 'tel', D.mobile)}${pw}`
+    : fac ? `${af('Full name', 'aName', 'text', 'As in your certificates', 'name', D.name)}${af('Email ID', 'aEmail', 'email', 'you@email.com', 'email', emailVal)}${af('Mobile number', 'aMobile', 'tel', '98xxx xxxxx', 'tel', D.mobile)}${pw}`
     : `${af('Institution name', 'aInst', 'text', 'e.g. Sri Ramakrishna College of Arts & Science', 'organization')}
        <div class="grid"><div class="field"><label for="aType">Institution type<span class="req">*</span></label><select class="in" id="aType">${Object.keys(INST_TYPES).map(t => `<option>${t}</option>`).join('')}</select></div>
        <div class="field"><label for="aDist">District<span class="req">*</span></label><select class="in" id="aDist">${districtsOf('Tamil Nadu').map(t => `<option ${t === 'Coimbatore' ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div>
        <div class="grid">${af('Contact person', 'aName', 'text', 'Your name', 'name')}${af('Your designation', 'aDesig', 'text', 'e.g. HR Manager', 'organization-title')}</div>
-       ${af('Official email', 'aEmail', 'email', 'hr@college.edu.in', 'email')}${pw}`;
+       ${af('Official email', 'aEmail', 'email', 'hr@college.edu.in', 'email', emailVal)}${pw}`;
 
   const heading = tab === 'reset'
     ? 'Reset password'
@@ -87,12 +122,19 @@ document.addEventListener('submit', async e => {
   };
   if (errEl) errEl.textContent = '';
 
-  const email = v('aEmail').toLowerCase();
-  if (!/^\S+@\S+\.\S+$/.test(email)) return err('Enter a valid email ID.');
+  const rawEmail = v('aEmail') || authEmail;
+  const email = rawEmail.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return err('Enter a valid email ID.');
+  }
 
   const submitBtn = f.querySelector('button[type="submit"]');
+  const allFormControls = f.querySelectorAll('input, select, button');
+
+  // Disable inputs during submission
+  allFormControls.forEach(el => el.disabled = true);
   if (submitBtn) {
-    submitBtn.disabled = true;
     submitBtn.textContent = mode === 'login' ? 'Logging in...' : mode === 'reset' ? 'Sending link...' : 'Creating account...';
   }
 
@@ -278,6 +320,8 @@ document.addEventListener('submit', async e => {
   } catch (ex) {
     return err(getFriendlyAuthError(ex));
   } finally {
+    // Always re-enable all form controls in finally block
+    allFormControls.forEach(el => el.disabled = false);
     if (submitBtn) {
       submitBtn.disabled = false;
       submitBtn.textContent = mode === 'login' ? 'Log in' : mode === 'reset' ? 'Send reset link' : 'Create account';
